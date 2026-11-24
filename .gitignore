@@ -1,7 +1,21 @@
-# Secrets - JANGAN commit
-credentials/service-account-key.json
+# === Secrets - JANGAN commit ===
+credentials/
 credentials*.json
-*.env
 .env
+*.env
+
+# === Sesi WhatsApp - KRITIS (tutup SEMUA varian termasuk _backup) ===
+.wwebjs_auth*/
+.wwebjs_cache*/
+.wwebjs_*/
+
+
+# === Logs & runtime ===
+*.log
+logs/
+pids/
+
+# === Lainnya ===
 node_modules/
 Thumbs.db
+.DS_Store

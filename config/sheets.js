@@ -1,12 +1,16 @@
 const { google } = require('googleapis');
+const { withRetry } = require('../utils/retry');
 require('dotenv').config();
 
 // 1. Ambil dan Validasi SPREADSHEET_ID
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const SPREADSHEET_ID   = process.env.SPREADSHEET_ID;
+const CREDENTIALS_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 if (!SPREADSHEET_ID) {
-  console.error('❌ FATAL: SPREADSHEET_ID kosong di file .env');
-  process.exit(1);
+    throw new Error('[sheets.js] FATAL: SPREADSHEET_ID kosong di .env');
+}
+if (!CREDENTIALS_PATH) {
+    throw new Error('[sheets.js] FATAL: GOOGLE_APPLICATION_CREDENTIALS kosong di .env');
 }
 
 // 2. Inisialisasi Google Auth
@@ -24,15 +28,16 @@ const sheets = google.sheets({ version: 'v4', auth });
  */
 async function readSheet(range) {
   try {
-    const response = await sheets.spreadsheets.values.get({
+    const response = await withRetry(() => sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range,
-    });
+    }));
     return response.data.values || [];
   } catch (error) {
     console.error(`[sheets.js] Gagal membaca range "${range}":`, error.message);
     throw error;
   }
+
 }
 
 /**
@@ -42,14 +47,14 @@ async function readSheet(range) {
  */
 async function appendRow(rowData) {
   try {
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'Transactions!A:J', // Sesuaikan dengan nama tab & kolom
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [rowData],
-      },
-    });
+    const response = await withRetry(() => sheets.spreadsheets.values.append({
+  spreadsheetId: SPREADSHEET_ID,
+  range: 'Transactions!A:J',
+  valueInputOption: 'USER_ENTERED',
+  requestBody: {
+    values: [rowData],
+  },
+}));
   } catch (error) {
     console.error('[sheets.js] Gagal menambah baris:', error.message);
     throw error;
